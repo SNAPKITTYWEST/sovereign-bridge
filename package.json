@@ -1,0 +1,36 @@
+{
+  "name": "sovereign-bridge",
+  "version": "0.1.0",
+  "description": "SOVEREIGNBRIDGE clean-room connector shells for enterprise API surfaces on SovereignSuite.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "bridge": "node bisoft-connector/src/server.mjs",
+    "quickbooks": "node sovereign-quickbooks/src/api/server.mjs",
+    "salesforce": "node sovereign-salesforce/src/api/server.mjs",
+    "sap": "node sovereign-sap/src/api/server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check bisoft-connector/src/server.mjs && node --check sovereign-quickbooks/src/api/server.mjs && node --check sovereign-salesforce/src/api/server.mjs && node --check sovereign-sap/src/api/server.mjs",
+    "db:migrate": "psql $DATABASE_URL -f db/migrations/001_bridge_shells.sql"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "fastify": "^5.8.5",
+    "pg": "^8.13.3"
+  },
+  "keywords": [
+    "sovereignbridge",
+    "bisoft",
+    "fastify",
+    "postgresql",
+    "quickbooks",
+    "salesforce",
+    "sap",
+    "clean-room",
+    "worm",
+    "trust-deed"
+  ]
+}
