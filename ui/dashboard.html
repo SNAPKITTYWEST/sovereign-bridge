@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⬡ SOVEREIGNBRIDGE — Control Tower</title>
+<style>
+  :root {
+    --bg:     #0a0a0f;
+    --panel:  #0f0f1a;
+    --border: #1a1a2e;
+    --green:  #00ff88;
+    --cyan:   #00d4ff;
+    --yellow: #ffcc00;
+    --red:    #ff4444;
+    --dim:    #444466;
+    --text:   #c8c8e8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 20px 0 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .ascii-logo {
+    color: var(--cyan);
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: pre;
+    margin-bottom: 8px;
+  }
+  .seal {
+    color: var(--green);
+    font-size: 15px;
+    letter-spacing: 4px;
+  }
+  .subtitle { color: var(--dim); margin-top: 4px; font-size: 11px; }
+
+  /* ── GRID ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .grid-1 { margin-bottom: 16px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    position: relative;
+  }
+  .panel-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--dim);
+    flex-shrink: 0;
+  }
+  .panel-title .dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .panel-title .dot.offline { background: var(--red); }
+  .panel-title .dot.pending { background: var(--yellow); animation: pulse 1s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── SHELL CARDS ── */
+  .shell-name  { font-size: 18px; font-weight: bold; color: var(--cyan); margin-bottom: 4px; }
+  .shell-port  { color: var(--dim); font-size: 11px; margin-bottom: 10px; }
+  .shell-stat  { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; }
+  .shell-stat .label { color: var(--dim); }
+  .shell-stat .val   { color: var(--green); }
+  .shell-stat .val.warn { color: var(--yellow); }
+
+  /* ── WORM CHAIN ── */
+  .worm-entry {
+    display: grid;
+    grid-template-columns: 60px 120px 140px 1fr 100px;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    align-items: center;
+  }
+  .worm-entry:last-child { border-bottom: none; }
+  .worm-seq   { color: var(--dim); }
+  .worm-event { color: var(--cyan); }
+  .worm-table { color: var(--text); }
+  .worm-hash  { color: var(--green); font-size: 10px; font-family: monospace; }
+  .worm-time  { color: var(--dim); font-size: 10px; text-align: right; }
+
+  /* ── BRIDGE ROUTING TABLE ── */
+  .route-row {
+    display: grid;
+    grid-template-columns: 100px 180px 40px 180px;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    align-items: center;
+  }
+  .route-row:last-child { border-bottom: none; }
+  .route-src  { color: var(--yellow); }
+  .route-from { color: var(--text); }
+  .route-arr  { color: var(--dim); text-align: center; }
+  .route-to   { color: var(--cyan); }
+
+  /* ── MERMAID ── */
+  .mermaid-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .mermaid { color: var(--text); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    gap: 24px;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 11px;
+  }
+  .stat-item .s-label { color: var(--dim); }
+  .stat-item .s-val   { color: var(--green); font-size: 16px; font-weight: bold; display: block; }
+
+  /* ── LOG ── */
+  .log-line {
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    display: flex;
+    gap: 10px;
+  }
+  .log-ts     { color: var(--dim); flex-shrink: 0; }
+  .log-system { color: var(--yellow); flex-shrink: 0; width: 90px; }
+  .log-msg    { color: var(--text); }
+  .log-msg.ok   { color: var(--green); }
+  .log-msg.warn { color: var(--yellow); }
+  .log-msg.err  { color: var(--red); }
+
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="ascii-logo">
+ ███████╗ ██████╗ ██╗   ██╗███████╗██████╗ ███████╗██╗ ██████╗ ███╗   ██╗
+ ██╔════╝██╔═══██╗██║   ██║██╔════╝██╔══██╗██╔════╝██║██╔════╝ ████╗  ██║
+ ███████╗██║   ██║██║   ██║█████╗  ██████╔╝█████╗  ██║██║  ███╗██╔██╗ ██║
+ ╚════██║██║   ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗██╔══╝  ██║██║   ██║██║╚██╗██║
+ ███████║╚██████╔╝ ╚████╔╝ ███████╗██║  ██║███████╗██║╚██████╔╝██║ ╚████║
+ ╚══════╝ ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+                    B R I D G E  ·  C O N T R O L  T O W E R</div>
+  <div class="seal">⬡ Ω ↺ Ψ Δ Λ Σ Φ α</div>
+  <div class="subtitle">SAP · NetSuite · QuickBooks · Salesforce — One Sovereign Ledger</div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-item"><span class="s-label">SHELLS ONLINE</span><span class="s-val" id="stat-online">—</span></div>
+  <div class="stat-item"><span class="s-label">WORM SEALS</span><span class="s-val" id="stat-worm">—</span></div>
+  <div class="stat-item"><span class="s-label">BRIDGE ROUTES</span><span class="s-val" id="stat-routes">—</span></div>
+  <div class="stat-item"><span class="s-label">TRUST DEED RULES</span><span class="s-val" id="stat-rules">—</span></div>
+  <div class="stat-item"><span class="s-label">DB</span><span class="s-val" id="stat-db">—</span></div>
+  <div class="stat-item" style="margin-left:auto">
+    <span class="s-label">LAST POLL</span>
+    <span class="s-val" id="stat-ts" style="font-size:11px">—</span>
+  </div>
+</div>
+
+<!-- SHELL STATUS CARDS -->
+<div class="section-label">Sovereign Shell Status</div>
+<div class="grid-4" id="shellCards">
+
+  <div class="panel" id="card-bisoft">
+    <div class="panel-title"><span class="dot pending" id="dot-bisoft"></span>BISOFT CONNECTOR</div>
+    <div class="shell-name">BRIDGE</div>
+    <div class="shell-port">:4500 / /bridge/:target/:resource</div>
+    <div class="shell-stat"><span class="label">Targets</span><span class="val" id="b-targets">4</span></div>
+    <div class="shell-stat"><span class="label">Routes mapped</span><span class="val" id="b-routes">—</span></div>
+    <div class="shell-stat"><span class="label">WORM</span><span class="val">SEALED</span></div>
+    <div class="shell-stat"><span class="label">Conflict policy</span><span class="val">SOVEREIGN WINS</span></div>
+  </div>
+
+  <div class="panel" id="card-qbo">
+    <div class="panel-title"><span class="dot pending" id="dot-qbo"></span>QUICKBOOKS SHELL</div>
+    <div class="shell-name">QB ONLINE</div>
+    <div class="shell-port">:4501 / /v3/company/:id</div>
+    <div class="shell-stat"><span class="label">Routes</span><span class="val" id="qb-routes">16</span></div>
+    <div class="shell-stat"><span class="label">Reports</span><span class="val">P&L · BS · Aging</span></div>
+    <div class="shell-stat"><span class="label">Webhooks</span><span class="val">ACTIVE</span></div>
+    <div class="shell-stat"><span class="label">QBO SQL</span><span class="val">TRANSPILING</span></div>
+  </div>
+
+  <div class="panel" id="card-sf">
+    <div class="panel-title"><span class="dot pending" id="dot-sf"></span>SALESFORCE SHELL</div>
+    <div class="shell-name">SF REST v60</div>
+    <div class="shell-port">:4502 / /services/data/v60.0</div>
+    <div class="shell-stat"><span class="label">sObjects</span><span class="val" id="sf-objects">—</span></div>
+    <div class="shell-stat"><span class="label">SOQL engine</span><span class="val">LIVE</span></div>
+    <div class="shell-stat"><span class="label">SOSL search</span><span class="val">LIVE</span></div>
+    <div class="shell-stat"><span class="label">Triggers</span><span class="val">JSON DSL</span></div>
+  </div>
+
+  <div class="panel" id="card-sap">
+    <div class="panel-title"><span class="dot pending" id="dot-sap"></span>SAP SHELL</div>
+    <div class="shell-name">S/4HANA OData</div>
+    <div class="shell-port">:4503 / /sap/opu/odata4</div>
+    <div class="shell-stat"><span class="label">OData v4</span><span class="val">LIVE</span></div>
+    <div class="shell-stat"><span class="label">BAPI router</span><span class="val">LIVE</span></div>
+    <div class="shell-stat"><span class="label">IDoc types</span><span class="val">ORDERS05·INVOIC02</span></div>
+    <div class="shell-stat"><span class="label">ALE ack</span><span class="val">ALEAUD</span></div>
+  </div>
+
+</div>
+
+<!-- BRIDGE ROUTING TABLE + WORM CHAIN -->
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-title">Bridge Routing Table</div>
+    <div id="routeTable">
+      <div class="route-row">
+        <span class="route-src">SAP</span>
+        <span class="route-from">BAPI_ACC_DOCUMENT_POST</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">journal_entry (GL post)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SAP</span>
+        <span class="route-from">IDoc INVOIC02</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">vendor_bill (AP)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SAP</span>
+        <span class="route-from">IDoc ORDERS05</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">purchase_order</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SAP</span>
+        <span class="route-from">MATMAS05</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">item (inventory)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">NETSUITE</span>
+        <span class="route-from">vendorbill</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">vendor_bill (AP)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">NETSUITE</span>
+        <span class="route-from">invoice</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">invoice (AR)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">QBO</span>
+        <span class="route-from">Invoice</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">invoice (AR)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">QBO</span>
+        <span class="route-from">Bill</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">vendor_bill (AP)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">QBO</span>
+        <span class="route-from">Account</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">account (GL)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SALESFORCE</span>
+        <span class="route-from">Account</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">customer (AR)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SALESFORCE</span>
+        <span class="route-from">Opportunity</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">invoice (pipeline)</span>
+      </div>
+      <div class="route-row">
+        <span class="route-src">SALESFORCE</span>
+        <span class="route-from">Contact</span>
+        <span class="route-arr">→</span>
+        <span class="route-to">customer contact</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">WORM Audit Chain — Live</div>
+    <div id="wormFeed">
+      <div class="worm-entry">
+        <span class="worm-seq">#—</span>
+        <span class="worm-event" colspan="3" style="color:var(--dim)">Awaiting chain data...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVITY LOG -->
+<div class="panel grid-1">
+  <div class="panel-title">Activity Log</div>
+  <div id="activityLog">
+    <div class="log-line">
+      <span class="log-ts">—</span>
+      <span class="log-system">SYSTEM</span>
+      <span class="log-msg">Initializing SovereignBridge control tower...</span>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const PORTS = {
+    bisoft: 4500,
+    qbo:    4501,
+    sf:     4502,
+    sap:    4503,
+  }
+
+  function ts() {
+    return new Date().toTimeString().slice(0,8)
+  }
+
+  function log(system, msg, cls = '') {
+    const feed = document.getElementById('activityLog')
+    const line = document.createElement('div')
+    line.className = 'log-line'
+    line.innerHTML = `
+      <span class="log-ts">${ts()}</span>
+      <span class="log-system">${system}</span>
+      <span class="log-msg ${cls}">${msg}</span>`
+    feed.prepend(line)
+    if (feed.children.length > 40) feed.lastChild.remove()
+  }
+
+  function setDot(id, state) {
+    const el = document.getElementById('dot-' + id)
+    if (!el) return
+    el.className = 'dot ' + state
+  }
+
+  async function checkHealth(key, port, path = '/health') {
+    try {
+      const r = await fetch(`http://localhost:${port}${path}`, { signal: AbortSignal.timeout(3000) })
+      if (r.ok) {
+        setDot(key, 'online')
+        log(key.toUpperCase(), `health OK — port ${port}`, 'ok')
+        return true
+      }
+      setDot(key, 'offline')
+      log(key.toUpperCase(), `HTTP ${r.status}`, 'warn')
+      return false
+    } catch {
+      setDot(key, 'offline')
+      log(key.toUpperCase(), `offline — start the server to connect`, 'warn')
+      return false
+    }
+  }
+
+  async function fetchWorm() {
+    try {
+      const r = await fetch('http://localhost:4500/worm', { signal: AbortSignal.timeout(3000) })
+      if (!r.ok) return
+      const { chain } = await r.json()
+      const feed = document.getElementById('wormFeed')
+      feed.innerHTML = ''
+      ;(chain || []).slice(0, 12).forEach(w => {
+        const row = document.createElement('div')
+        row.className = 'worm-entry'
+        row.innerHTML = `
+          <span class="worm-seq">#${w.seq}</span>
+          <span class="worm-event">${w.event_type}</span>
+          <span class="worm-table">${w.table_name}</span>
+          <span class="worm-hash">${(w.this_hash||'').slice(0,16)}…</span>
+          <span class="worm-time">${new Date(w.created_at).toTimeString().slice(0,8)}</span>`
+        feed.appendChild(row)
+      })
+      document.getElementById('stat-worm').textContent = chain?.length ?? '—'
+    } catch { /* bridge offline */ }
+  }
+
+  async function poll() {
+    document.getElementById('stat-ts').textContent = ts()
+    document.getElementById('stat-routes').textContent = '12'
+    document.getElementById('stat-rules').textContent = 'ACTIVE'
+    document.getElementById('b-routes').textContent = '12'
+    document.getElementById('sf-objects').textContent = '7'
+
+    const results = await Promise.all([
+      checkHealth('bisoft', PORTS.bisoft, '/health'),
+      checkHealth('qbo',    PORTS.qbo,    '/health'),
+      checkHealth('sf',     PORTS.sf,     '/health'),
+      checkHealth('sap',    PORTS.sap,    '/health'),
+    ])
+    const online = results.filter(Boolean).length
+    document.getElementById('stat-online').textContent = `${online}/4`
+
+    // Probe DB via bisoft connector health
+    try {
+      const r = await fetch(`http://localhost:${PORTS.bisoft}/health`, { signal: AbortSignal.timeout(3000) })
+      if (r.ok) {
+        const d = await r.json()
+        document.getElementById('stat-db').textContent = d.db ? 'PG16 ✓' : '—'
+      }
+    } catch { document.getElementById('stat-db').textContent = 'offline' }
+
+    await fetchWorm()
+  }
+
+  // Boot
+  log('SYSTEM', 'SovereignBridge UI loaded', 'ok')
+  log('SYSTEM', 'PostgreSQL 16 · pgvector · Redis · MinIO via docker-compose')
+  log('BRIDGE', 'Polling shells on :4500–:4503...')
+  poll()
+  setInterval(poll, 10_000)
+</script>
+</body>
+</html>
